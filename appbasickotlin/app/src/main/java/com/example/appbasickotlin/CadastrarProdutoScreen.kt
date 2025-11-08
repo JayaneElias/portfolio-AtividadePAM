@@ -1,5 +1,6 @@
 package com.example.appbasickotlin
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -26,6 +28,11 @@ fun CadastrarProdutoScreen(onRegisterComplete: () -> Unit) {
     var produto by remember { mutableStateOf("") }
     var quantidade by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val dbHelper = remember {
+        ProductDatabaseHelper.getInstance(context.applicationContext)
+    }
+
 
     val gradient = Brush.verticalGradient(
         colors = listOf(
@@ -110,7 +117,51 @@ fun CadastrarProdutoScreen(onRegisterComplete: () -> Unit) {
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Button(
-                    onClick = { onRegisterComplete() },
+                    onClick = {
+                        val quantidadeInt = quantidade.toIntOrNull()
+
+                        if (produto.isBlank()) {
+                            Toast.makeText(
+                                context,
+                                "Informe o nome do produto",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
+
+                        if (quantidadeInt == null) {
+                            Toast.makeText(
+                                context,
+                                "Informe uma quantidade válida",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
+
+                        val sucesso = dbHelper.insertProduct(
+                            produto.trim(),
+                            quantidadeInt,
+                            descricao.trim()
+                        )
+
+                        if (sucesso) {
+                            Toast.makeText(
+                                context,
+                                "Produto cadastrado com sucesso",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            produto = ""
+                            quantidade = ""
+                            descricao = ""
+                            onRegisterComplete()
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Erro ao cadastrar produto",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
